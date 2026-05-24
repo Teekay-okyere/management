@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>FMJ Booking Dashboard</title>
+
+<link rel="stylesheet" href="bootstrap.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+    --primary:#ff006a;
+    --secondary:#7b00ff;
+    --bg:#050505;
+    --card:#111118;
+    --text:#ffffff;
+    --muted:#aaaaaa;
+    --border:rgba(255,255,255,0.08);
+    --radius:28px;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Poppins',sans-serif;
+}
+
+/* ================= NAVBAR ================= */
+
+.navbar{
+    background:rgba(0,0,0,0.7);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border);
+    padding:18px 25px;
+    position:sticky;
+    top:0;
+    z-index:999;
+}
+
+.live-dot{
+    width:10px;
+    height:10px;
+    background:#00ff7b;
+    border-radius:50%;
+    animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+    0%{transform:scale(1);}
+    50%{transform:scale(1.5);}
+    100%{transform:scale(1);}
+}
+
+/* ================= SEARCH ================= */
+
+.search-box{
+    margin:20px 0;
+}
+
+.search-box input{
+    background:#111;
+    border:1px solid var(--border);
+    color:#fff;
+    padding:14px 20px;
+    border-radius:50px;
+}
+
+.search-box input:focus{
+    background:#111;
+    color:#fff;
+    border-color:var(--primary);
+    box-shadow:none;
+}
+
+/* ================= TOOLS ================= */
+
+.tools{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:25px;
+}
+
+.filter-btn{
+    border:none;
+    padding:10px 18px;
+    border-radius:50px;
+    background:#111;
+    color:#fff;
+    cursor:pointer;
+}
+
+.filter-btn.active{
+    background:linear-gradient(135deg,var(--primary),var(--secondary));
+}
+
+/* ================= BUTTONS ================= */
+
+.btn{
+    border-radius:50px !important;
+    font-weight:600;
+}
+
+/* ================= STAT CARDS ================= */
+
+.stat-card{
+    background:rgba(255,255,255,0.03);
+    backdrop-filter:blur(14px);
+    padding:25px;
+    border-radius:28px;
+    border:1px solid var(--border);
+    margin-bottom:20px;
+}
+
+.stat-card h6{
+    color:var(--muted);
+    margin-bottom:10px;
+}
+
+.stat-card h2{
+    font-weight:800;
+    font-size:34px;
+}
+
+/* ================= TABLE ================= */
+
+.table-container{
+    background:linear-gradient(145deg,#101010,#181818);
+    padding:20px;
+    border-radius:28px;
+    border:1px solid var(--border);
+    overflow-x:auto;
+}
+
+.table{
+    color:#fff;
+}
+
+.table td,
+.table th{
+    border-color:rgba(255,255,255,0.05);
+    vertical-align:middle;
+}
+
+.action-buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+}
+
+/* ================= MOBILE ================= */
+
+.mobile-card{
+    display:none;
+    background:#111;
+    padding:18px;
+    border-radius:20px;
+    margin-bottom:15px;
+    border:1px solid var(--border);
+}
+
+.card-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+/* ================= CHART ================= */
+
+.chart-box{
+    background:#111;
+    padding:20px;
+    border-radius:28px;
+    margin-bottom:25px;
+}
+
+/* ================= TOAST ================= */
+
+.toast-box{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    z-index:9999;
+}
+
+.toast{
+    background:linear-gradient(135deg,var(--primary),var(--secondary));
+    padding:14px 20px;
+    border-radius:50px;
+    margin-top:10px;
+    color:#fff;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width:768px){
+
+    .table{
+        display:none;
+    }
+
+    .mobile-card{
+        display:block;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+
+<div class="navbar d-flex justify-content-between align-items-center">
+
+    <div>
+
+        <h4 class="mb-1">FMJ Booking Dashboard</h4>
+
+        <div class="d-flex align-items-center gap-2">
+            <div class="live-dot"></div>
+            <small style="color:#00ff7b;">Live Updates Active</small>
+        </div>
+
+    </div>
+
+    <button onclick="logout()" class="btn btn-danger btn-sm">
+        Logout
+    </button>
+
+</div>
+
+<!-- ================= CONTENT ================= -->
+
+<div class="container mt-4">
+
+<!-- SEARCH -->
+
+<div class="search-box">
+
+    <input
+        type="text"
+        id="search"
+        class="form-control"
+        placeholder="Search bookings..."
+    >
+
+</div>
+
+<!-- TOOLS -->
+
+<div class="tools">
+
+    <button class="filter-btn active"
+    onclick="setFilter('all', this)">
+    All
+    </button>
+
+    <button class="filter-btn"
+    onclick="setFilter('confirmed', this)">
+    Confirmed
+    </button>
+
+    <button class="filter-btn"
+    onclick="setFilter('new', this)">
+    Pending
+    </button>
+
+    <button class="filter-btn"
+    onclick="setFilter('deleted', this)">
+    Trash
+    </button>
+
+    <button class="btn btn-success btn-sm"
+    onclick="exportExcel()">
+    Export Excel
+    </button>
+
+    <button class="btn btn-dark btn-sm"
+    onclick="exportPDF()">
+    Export PDF
+    </button>
+
+</div>
+
+<!-- ================= STATS ================= -->
+
+<div class="row">
+
+<div class="col-lg-3 col-md-6">
+<div class="stat-card">
+<h6>Total Bookings</h6>
+<h2 id="totalBookings">0</h2>
+</div>
+</div>
+
+<div class="col-lg-3 col-md-6">
+<div class="stat-card">
+<h6>Confirmed</h6>
+<h2 id="confirmedBookings">0</h2>
+</div>
+</div>
+
+<div class="col-lg-3 col-md-6">
+<div class="stat-card">
+<h6>Pending</h6>
+<h2 id="pendingBookings">0</h2>
+</div>
+</div>
+
+<div class="col-lg-3 col-md-6">
+<div class="stat-card">
+<h6>Today</h6>
+<h2 id="todayBookings">0</h2>
+</div>
+</div>
+
+<div class="col-lg-3 col-md-6">
+<div class="stat-card">
+<h6>This Month</h6>
+<h2 id="monthBookings">0</h2>
+</div>
+</div>
+
+<div class="col-lg-3 col-md-6">
+<div class="stat-card">
+<h6>Top Event</h6>
+<h2 id="topEvent">-</h2>
+</div>
+</div>
+
+<div class="col-lg-3 col-md-6">
+<div class="stat-card">
+<h6>Conversion Rate</h6>
+<h2 id="conversionRate">0%</h2>
+</div>
+</div>
+
+</div>
+
+<!-- ================= CHART ================= -->
+
+<div class="chart-box">
+<canvas id="chart"></canvas>
+</div>
+
+<!-- ================= TABLE ================= -->
+
+<div class="table-container">
+
+<table class="table table-hover">
+
+<thead>
+
+<tr>
+<th>Name</th>
+<th>Phone</th>
+<th>Event</th>
+<th>Date</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+
+</thead>
+
+<tbody id="table"></tbody>
+
+</table>
+
+<div id="mobileContainer"></div>
+
+</div>
+
+</div>
+
+<!-- ================= TOAST ================= -->
+
+<div class="toast-box" id="toastBox"></div>
+
+<!-- ================= FIREBASE ================= -->
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyBpMk17aVN7pIOYFUOdayPBKoHoOFmWfH0",
+authDomain: "frank-booking.firebaseapp.com",
+projectId: "frank-booking",
+storageBucket: "frank-booking.appspot.com",
+messagingSenderId: "24110054382",
+appId: "1:24110054382:web:745407f770e845832fecff"
+
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+const db = firebase.firestore();
+
+let all = [];
+let chart;
+let filter = "all";
+
+/* ================= TOAST ================= */
+
+function toast(msg){
+
+const box = document.getElementById("toastBox");
+
+const div = document.createElement("div");
+
+div.className = "toast";
+
+div.innerText = msg;
+
+box.appendChild(div);
+
+setTimeout(()=>div.remove(),4000);
+
+}
+
+/* ================= FILTER ================= */
+
+function setFilter(type, btn){
+
+filter = type;
+
+document.querySelectorAll(".filter-btn")
+.forEach(b=>b.classList.remove("active"));
+
+btn.classList.add("active");
+
+applyFilter();
+
+}
+
+/* ================= SEARCH ================= */
+
+document.getElementById("search")
+.addEventListener("keyup", applyFilter);
+
+/* ================= APPLY FILTER ================= */
+
+function applyFilter(){
+
+let data = [...all];
+
+if(filter === "all"){
+    data = data.filter(x => (x.status || "new") !== "deleted");
+}
+
+if(filter !== "all"){
+
+data = data.filter(x =>
+(x.status || "new") === filter
+);
+
+}
+
+let search = document.getElementById("search")
+.value.toLowerCase();
+
+if(search){
+
+data = data.filter(x =>
+
+(x.full_name || "")
+.toLowerCase()
+.includes(search)
+
+||
+
+(x.phone || "")
+.toLowerCase()
+.includes(search)
+
+||
+
+(x.event_type || "")
+.toLowerCase()
+.includes(search)
+
+);
+
+}
+
+render(data);
+
+}
+
+/* ================= FIREBASE ================= */
+
+db.collection("bookings")
+.orderBy("created_at","desc")
+.onSnapshot(snapshot=>{
+
+all = [];
+
+let today = 0;
+let month = 0;
+let confirmed = 0;
+let pending = 0;
+
+let eventCount = {};
+
+let chartTotal = {};
+let chartConfirmed = {};
+let chartPending = {};
+
+snapshot.forEach(doc=>{
+
+let d = doc.data();
+
+d.id = doc.id;
+
+all.push(d);
+
+let date = d.created_at?.seconds
+? new Date(d.created_at.seconds * 1000)
+: new Date();
+
+if((d.status || "new") !== "deleted"){
+
+if(date.toDateString() === new Date().toDateString()){
+today++;
+}
+
+if(date.getMonth() === new Date().getMonth()){
+month++;
+}
+
+if(d.status === "confirmed"){
+confirmed++;
+}
+
+if((d.status || "new") === "new"){
+pending++;
+}
+
+let event = d.event_type || "Unknown";
+
+eventCount[event] =
+(eventCount[event] || 0) + 1;
+
+let day = date.toISOString().split("T")[0];
+
+chartTotal[day] =
+(chartTotal[day] || 0) + 1;
+
+if(d.status === "confirmed"){
+chartConfirmed[day] =
+(chartConfirmed[day] || 0) + 1;
+}
+
+if((d.status || "new") === "new"){
+chartPending[day] =
+(chartPending[day] || 0) + 1;
+}
+
+}
+
+});
+
+/* ================= STATS ================= */
+
+const activeBookings = all.filter(x => (x.status || "new") !== "deleted");
+
+document.getElementById("totalBookings").innerText = activeBookings.length;
+
+document.getElementById("confirmedBookings").innerText = confirmed;
+
+document.getElementById("pendingBookings").innerText = pending;
+
+document.getElementById("todayBookings").innerText = today;
+
+document.getElementById("monthBookings").innerText = month;
+
+/* ================= TOP EVENT ================= */
+
+let topEvent = "-";
+let max = 0;
+
+for(let key in eventCount){
+
+if(eventCount[key] > max){
+
+max = eventCount[key];
+topEvent = key;
+
+}
+
+}
+
+document.getElementById("topEvent").innerText = topEvent;
+
+/* ================= CONVERSION ================= */
+
+let conversion = activeBookings.length
+? ((confirmed / activeBookings.length) * 100).toFixed(1)
+: 0;
+
+document.getElementById("conversionRate")
+.innerText = conversion + "%";
+
+applyFilter();
+
+drawChart(chartTotal, chartConfirmed, chartPending);
+
+}, error => {
+
+console.error(error);
+
+toast("❌ Firebase connection error");
+
+});
+
+/* ================= RENDER ================= */
+
+function render(data){
+
+const table = document.getElementById("table");
+
+const mobile = document.getElementById("mobileContainer");
+
+table.innerHTML = "";
+
+mobile.innerHTML = "";
+
+if(data.length === 0){
+
+table.innerHTML = `
+<tr>
+<td colspan="6" class="text-center py-4">
+No bookings found
+</td>
+</tr>
+`;
+
+mobile.innerHTML = `
+<div class="mobile-card text-center">
+No bookings found
+</div>
+`;
+
+return;
+
+}
+
+data.forEach(d=>{
+
+const badge =
+d.status === "confirmed"
+? `<span class="badge bg-success">Confirmed</span>`
+: d.status === "deleted"
+? `<span class="badge bg-danger">Trash</span>`
+: `<span class="badge bg-warning text-dark">Pending</span>`;
+
+const safeName = (d.full_name || "").replace(/'/g,"");
+const safePhone = (d.phone || "").replace(/'/g,"");
+const safeEvent = (d.event_type || "").replace(/'/g,"");
+
+const actionButtons = d.status === "deleted"
+
+? `
+
+<button class="btn btn-danger btn-sm"
+onclick="permanentDelete('${d.id}')">
+❌ Permanent Delete
+</button>
+
+<button class="btn btn-secondary btn-sm"
+onclick="restoreB('${d.id}')">
+↩ Restore
+</button>
+
+`
+
+: `
+
+<button class="btn btn-success btn-sm"
+onclick="confirmB('${d.id}')">
+✔ Confirm
+</button>
+
+<button class="btn btn-primary btn-sm"
+onclick="editB(
+'${d.id}',
+\`${safeName}\`,
+\`${safePhone}\`,
+\`${safeEvent}\`
+)">
+✏ Edit
+</button>
+
+<button class="btn btn-danger btn-sm"
+onclick="moveToTrash('${d.id}')">
+🗑 Move to Trash
+</button>
+
+`;
+
+table.innerHTML += `
+
+<tr>
+
+<td>${safeName}</td>
+
+<td>${safePhone}</td>
+
+<td>${safeEvent}</td>
+
+<td>${d.event_date || ""}</td>
+
+<td>${badge}</td>
+
+<td>
+<div class="action-buttons">
+${actionButtons}
+</div>
+</td>
+
+</tr>
+
+`;
+
+mobile.innerHTML += `
+
+<div class="mobile-card">
+
+<h5>${safeName}</h5>
+
+<p>📞 ${safePhone}</p>
+
+<p>🎤 ${safeEvent}</p>
+
+<p>📅 ${d.event_date || ""}</p>
+
+<p>${badge}</p>
+
+<div class="card-actions">
+
+${actionButtons}
+
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+/* ================= CHART ================= */
+
+function drawChart(total, confirmed, pending){
+
+let labels = Object.keys(total).sort();
+
+let t = labels.map(x=>total[x]||0);
+
+let c = labels.map(x=>confirmed[x]||0);
+
+let p = labels.map(x=>pending[x]||0);
+
+if(chart) chart.destroy();
+
+chart = new Chart(document.getElementById("chart"),{
+
+type:"line",
+
+data:{
+
+labels,
+
+datasets:[
+
+{
+label:"Total",
+data:t,
+borderColor:"#ff006a",
+backgroundColor:"rgba(255,0,106,0.1)",
+fill:true,
+tension:0.4
+},
+
+{
+label:"Confirmed",
+data:c,
+borderColor:"#00ff7b",
+backgroundColor:"rgba(0,255,123,0.1)",
+fill:true,
+tension:0.4
+},
+
+{
+label:"Pending",
+data:p,
+borderColor:"#ffb700",
+backgroundColor:"rgba(255,183,0,0.1)",
+fill:true,
+tension:0.4
+}
+
+]
+
+},
+
+options:{
+responsive:true,
+plugins:{
+legend:{
+labels:{
+color:"#fff"
+}
+}
+},
+scales:{
+x:{
+ticks:{color:"#aaa"},
+grid:{color:"rgba(255,255,255,0.05)"}
+},
+y:{
+ticks:{color:"#aaa"},
+grid:{color:"rgba(255,255,255,0.05)"}
+}
+}
+}
+
+});
+
+}
+
+/* ================= ACTIONS ================= */
+
+async function confirmB(id){
+
+try{
+
+await db.collection("bookings")
+.doc(id)
+.update({
+status:"confirmed"
+});
+
+toast("✅ Booking confirmed");
+
+}catch(error){
+
+console.error(error);
+
+toast("❌ Failed to confirm booking");
+
+}
+
+}
+
+async function moveToTrash(id){
+
+let ok = confirm(
+"Move booking to Trash?"
+);
+
+if(!ok) return;
+
+try{
+
+await db.collection("bookings")
+.doc(id)
+.update({
+status:"deleted",
+deleted_at:new Date()
+});
+
+toast("🗑 Booking moved to Trash");
+
+}catch(error){
+
+console.error(error);
+
+toast("❌ Failed to move booking");
+
+}
+
+}
+
+async function restoreB(id){
+
+try{
+
+await db.collection("bookings")
+.doc(id)
+.update({
+status:"new"
+});
+
+toast("↩ Booking restored");
+
+}catch(error){
+
+console.error(error);
+
+toast("❌ Failed to restore booking");
+
+}
+
+}
+
+async function permanentDelete(id){
+
+let ok = confirm(
+"Permanently delete booking forever?"
+);
+
+if(!ok) return;
+
+try{
+
+await db.collection("bookings")
+.doc(id)
+.delete();
+
+toast("🔥 Booking permanently deleted");
+
+}catch(error){
+
+console.error(error);
+
+toast("❌ Failed to delete booking");
+
+}
+
+}
+
+async function editB(id,n,p,e){
+
+let a = prompt("Name",n);
+if(a===null) return;
+
+let b = prompt("Phone",p);
+if(b===null) return;
+
+let c = prompt("Event",e);
+if(c===null) return;
+
+try{
+
+await db.collection("bookings")
+.doc(id)
+.update({
+full_name:a,
+phone:b,
+event_type:c
+});
+
+toast("✏ Booking updated");
+
+}catch(error){
+
+console.error(error);
+
+toast("❌ Failed to update booking");
+
+}
+
+}
+
+/* ================= EXPORT ================= */
+
+function exportExcel(){
+
+const exportData = all.map(item=>({
+Name:item.full_name || "",
+Phone:item.phone || "",
+Event:item.event_type || "",
+Date:item.event_date || "",
+Status:item.status || "new"
+}));
+
+const ws = XLSX.utils.json_to_sheet(exportData);
+
+const wb = XLSX.utils.book_new();
+
+XLSX.utils.book_append_sheet(wb, ws, "Bookings");
+
+XLSX.writeFile(wb, "fmj_bookings.xlsx");
+
+toast("📥 Excel exported");
+
+}
+
+function exportPDF(){
+
+const { jsPDF } = window.jspdf;
+
+const doc = new jsPDF();
+
+doc.setFontSize(18);
+
+doc.text("FMJ Bookings Report",20,20);
+
+let y = 40;
+
+all.forEach((b,i)=>{
+
+doc.setFontSize(12);
+
+doc.text(
+`${i+1}. ${b.full_name || ""} | ${b.phone || ""} | ${b.event_type || ""}`,
+20,
+y
+);
+
+y += 10;
+
+});
+
+doc.save("fmj_bookings.pdf");
+
+toast("📄 PDF exported");
+
+}
+
+/* ================= LOGOUT ================= */
+
+function logout(){
+
+firebase.auth()
+.signOut()
+.then(()=>location="index.html");
+
+}
+
+</script>
+
+</body>
+</html>

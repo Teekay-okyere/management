@@ -1,0 +1,280 @@
+<!doctype html>
+<html>
+<head>
+<title>Admin Login</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="bootstrap.min.css">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+    --primary:#ff006a;
+    --secondary:#7b00ff;
+    --bg:#050505;
+    --text:#ffffff;
+    --muted:#aaaaaa;
+    --border:rgba(255,255,255,0.08);
+    --radius:28px;
+}
+
+body{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Poppins',sans-serif;
+    padding:20px;
+    position:relative;
+}
+
+body::before{
+    content:'';
+    position:absolute;
+    width:600px;
+    height:600px;
+    background:var(--primary);
+    filter:blur(180px);
+    opacity:0.12;
+    top:-150px;
+    right:-100px;
+}
+
+.login-card{
+    width:100%;
+    max-width:400px;
+    background:linear-gradient(145deg,#101010,#181818);
+    padding:45px;
+    border-radius:28px;
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+    position:relative;
+    z-index:2;
+}
+
+.logo{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.logo img{
+    width:70px;
+    border-radius:50%;
+}
+
+h3{
+    text-align:center;
+    font-weight:700;
+    margin-bottom:30px;
+    color:#fff;
+}
+
+.form-control{
+    height:52px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,0.08);
+    background:#0c0c0c;
+    color:#fff;
+    font-size:16px;
+}
+
+.form-control::placeholder{
+    color:#777;
+}
+
+.password-wrapper{
+    position:relative;
+}
+
+.toggle-password{
+    position:absolute;
+    right:15px;
+    top:50%;
+    transform:translateY(-50%);
+    cursor:pointer;
+    font-size:13px;
+    color:#aaa;
+}
+
+.remember{
+    font-size:14px;
+    color:#aaa;
+    margin-bottom:20px;
+}
+
+.btn-dark{
+    width:100%;
+    height:52px;
+    border:none;
+    border-radius:60px;
+    font-weight:600;
+    color:#fff;
+    background:linear-gradient(135deg,#ff006a,#7b00ff);
+}
+
+.error-msg{
+    color:#ff4d6d;
+    font-size:13px;
+    margin-bottom:12px;
+    display:none;
+}
+
+@media(max-width:480px){
+    .login-card{
+        padding:30px 20px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="login-card">
+
+    <div class="logo">
+        <img src="frank mensah jnr.png" alt="Logo">
+    </div>
+
+    <h3>Admin Login</h3>
+
+    <input
+        id="email"
+        type="email"
+        class="form-control mb-3"
+        placeholder="Email"
+    >
+
+    <div class="password-wrapper mb-3">
+        <input
+            id="password"
+            type="password"
+            class="form-control"
+            placeholder="Password"
+        >
+        <span class="toggle-password" onclick="togglePassword()">Show</span>
+    </div>
+
+    <div class="remember">
+        <label>
+            <input type="checkbox" id="remember">
+            Remember me
+        </label>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <button
+        id="loginBtn"
+        onclick="login()"
+        class="btn btn-dark"
+    >
+        Login
+    </button>
+
+</div>
+
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+<script>
+
+/* =========================================
+   PASTE YOUR FIREBASE CONFIG HERE
+========================================= */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBpMk17aVN7pIOYFUOdayPBKoHoOFmWfH0",
+  authDomain: "frank-booking.firebaseapp.com",
+  projectId: "frank-booking",
+  storageBucket: "frank-booking.firebasestorage.app",
+  messagingSenderId: "24110054382",
+  appId: "1:24110054382:web:745407f770e845832fecff",
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+
+/* LOGIN */
+function login(){
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const remember = document.getElementById("remember").checked;
+
+    const errorMsg = document.getElementById("errorMsg");
+    const loginBtn = document.getElementById("loginBtn");
+
+    errorMsg.style.display = "none";
+
+    if(email === "" || password === ""){
+        errorMsg.innerText = "Enter email and password";
+        errorMsg.style.display = "block";
+        return;
+    }
+
+    loginBtn.innerText = "Signing in...";
+
+    const persistence = remember
+      ? firebase.auth.Auth.Persistence.LOCAL
+      : firebase.auth.Auth.Persistence.SESSION;
+
+    auth.setPersistence(persistence)
+      .then(() => {
+        return auth.signInWithEmailAndPassword(email, password);
+      })
+      .then(() => {
+
+          window.location.href = "dashboard.html";
+
+      })
+      .catch((error) => {
+
+          errorMsg.innerText = error.message;
+          errorMsg.style.display = "block";
+
+      })
+      .finally(() => {
+
+          loginBtn.innerText = "Login";
+
+      });
+}
+
+
+/* SHOW / HIDE PASSWORD */
+function togglePassword(){
+
+    const password = document.getElementById("password");
+    const toggle = document.querySelector(".toggle-password");
+
+    if(password.type === "password"){
+        password.type = "text";
+        toggle.innerText = "Hide";
+    }else{
+        password.type = "password";
+        toggle.innerText = "Show";
+    }
+
+}
+
+
+/* AUTO REDIRECT IF ALREADY LOGGED IN */
+auth.onAuthStateChanged(function(user){
+    if(user){
+        window.location.href = "dashboard.html";
+    }
+});
+
+</script>
+
+</body>
+</html>
